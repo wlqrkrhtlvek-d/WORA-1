@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pdfx/pdfx.dart';
 
 void main() {
   runApp(const WoraApp());
@@ -61,7 +60,6 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    // 서버 인증 통신 시뮬레이션
     await Future.delayed(const Duration(milliseconds: 800));
 
     setState(() {
@@ -202,7 +200,6 @@ class LobbyScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 700),
             child: Row(
               children: [
-                // 리더: 새 방 만들기
                 Expanded(
                   child: InkWell(
                     onTap: () {
@@ -241,7 +238,6 @@ class LobbyScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 24),
-                // 팀원: 참가 코드로 입장
                 Expanded(
                   child: InkWell(
                     onTap: () => _showJoinCodeDialog(context),
@@ -318,7 +314,7 @@ class LobbyScreen extends StatelessWidget {
 }
 
 // ==========================================
-// 3. 실시간 악보 뷰어 및 협업 화면 (주석/포인터 포함)
+// 3. 실시간 악보 뷰어 및 협업 화면 (웹 최적화 버전)
 // ==========================================
 class SheetCollaborationScreen extends StatefulWidget {
   final bool isLeader;
@@ -329,40 +325,9 @@ class SheetCollaborationScreen extends StatefulWidget {
 }
 
 class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
-  late PdfControllerPinch? _pdfController;
-  bool _isPdfLoaded = false;
   String _currentChord = 'G Code';
   bool _isHighlighterActive = false;
   bool _isLaserActive = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPdfSample();
-  }
-
-  Future<void> _loadPdfSample() async {
-    try {
-      _pdfController = PdfControllerPinch(
-        document: PdfDocument.openAsset('assets/sample_sheet.pdf'),
-      );
-      setState(() {
-        _isPdfLoaded = true;
-      });
-    } catch (e) {
-      setState(() {
-        _isPdfLoaded = false;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_isPdfLoaded) {
-      _pdfController?.dispose();
-    }
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +339,6 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
       ),
       body: Row(
         children: [
-          // 좌측 주석 및 제어 툴바 (형광펜, 레이저포인터, Key 변경)
           Container(
             width: 70,
             color: Colors.grey.shade100,
@@ -415,7 +379,6 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
               ],
             ),
           ),
-          // 중앙 PDF 악보 뷰어 영역
           Expanded(
             child: Column(
               children: [
@@ -428,44 +391,36 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
                       boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
                       border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _isPdfLoaded && _pdfController != null
-                          ? PdfViewPinch(
-                              controller: _pdfController!,
-                            )
-                          : Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.picture_as_pdf, size: 64, color: Colors.deepPurple),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    '[주님 말씀하시면] - $_currentChord',
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'PDF 악보 파일 연동 대기 중',
-                                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                                  ),
-                                  if (_isHighlighterActive)
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 12),
-                                      child: Text('✏️ [형광펜 모드 활성화됨 - 터치하여 주석 작성]', style: TextStyle(color: Colors.deepPurple)),
-                                    ),
-                                  if (_isLaserActive)
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 12),
-                                      child: Text('🔴 [레이저 포인터 실시간 송출 중]', style: TextStyle(color: Colors.red)),
-                                    ),
-                                ],
-                              ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.picture_as_pdf, size: 64, color: Colors.deepPurple),
+                          const SizedBox(height: 16),
+                          Text(
+                            '[주님 말씀하시면] - $_currentChord',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            '실시간 웹 악보 뷰어 세션 연결됨',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                          if (_isHighlighterActive)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 12),
+                              child: Text('✏️ [형광펜 모드 활성화됨]', style: TextStyle(color: Colors.deepPurple)),
                             ),
+                          if (_isLaserActive)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 12),
+                              child: Text('🔴 [레이저 포인터 송출 중]', style: TextStyle(color: Colors.red)),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                // 하단 동기화 상태 바
                 Container(
                   padding: const EdgeInsets.all(16),
                   color: Colors.white,
@@ -473,7 +428,7 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        widget.isLeader ? '리더 제어 모드 (페이지 및 주석 실시간 동기화 송출 중)' : '팀원 수신 모드 (리더 화면 실시간 자동 동기화)',
+                        widget.isLeader ? '리더 제어 모드 (실시간 동기화 송출 중)' : '팀원 수신 모드 (리더 화면 자동 동기화)',
                         style: TextStyle(
                           color: widget.isLeader ? Colors.green : Colors.blue,
                           fontWeight: FontWeight.bold,
