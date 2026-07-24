@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pdfx/pdfx.dart'; // PDF 렌더링을 위한 패키지
+import 'package:pdfx/pdfx.dart';
 
 void main() {
   runApp(const WoraApp());
@@ -23,7 +23,9 @@ class WoraApp extends StatelessWidget {
   }
 }
 
+// ==========================================
 // 1. 로그인 및 회원가입 화면
+// ==========================================
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -35,12 +37,43 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _submitAuth() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '이메일과 비밀번호를 모두 입력해주세요.';
+      });
+      return;
+    }
+
+    // 서버 인증 통신 시뮬레이션
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LobbyScreen()),
+      );
+    }
   }
 
   @override
@@ -77,6 +110,16 @@ class _AuthScreenState extends State<AuthScreen> {
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
+                if (_errorMessage.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                  ),
                 TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
@@ -105,16 +148,17 @@ class _AuthScreenState extends State<AuthScreen> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LobbyScreen()),
-                      );
-                    },
-                    child: Text(
-                      _isLogin ? '로그인' : '회원가입',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                    onPressed: _isLoading ? null : _submitAuth,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text(
+                            _isLogin ? '로그인' : '회원가입',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -122,6 +166,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   onPressed: () {
                     setState(() {
                       _isLogin = !_isLogin;
+                      _errorMessage = '';
                     });
                   },
                   child: Text(_isLogin ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'),
@@ -135,7 +180,9 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
+// ==========================================
 // 2. 로비 화면 (방 생성 / 참가 코드 입력)
+// ==========================================
 class LobbyScreen extends StatelessWidget {
   const LobbyScreen({super.key});
 
@@ -155,6 +202,7 @@ class LobbyScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 700),
             child: Row(
               children: [
+                // 리더: 새 방 만들기
                 Expanded(
                   child: InkWell(
                     onTap: () {
@@ -193,6 +241,7 @@ class LobbyScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 24),
+                // 팀원: 참가 코드로 입장
                 Expanded(
                   child: InkWell(
                     onTap: () => _showJoinCodeDialog(context),
@@ -268,7 +317,9 @@ class LobbyScreen extends StatelessWidget {
   }
 }
 
-// 3. 실제 PDF 악보 뷰어 및 실시간 협업 화면
+// ==========================================
+// 3. 실시간 악보 뷰어 및 협업 화면 (주석/포인터 포함)
+// ==========================================
 class SheetCollaborationScreen extends StatefulWidget {
   final bool isLeader;
   const SheetCollaborationScreen({super.key, required this.isLeader});
@@ -290,18 +341,15 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
     _loadPdfSample();
   }
 
-  // PDF 샘플 로드 (실제 기기에서는 업로드된 PDF 파일 경로 또는 URL 연결)
   Future<void> _loadPdfSample() async {
     try {
-      // 예시용 자산 또는 네트워크 PDF 초기화 (실제 구현 시 파일 업로드 연동)
       _pdfController = PdfControllerPinch(
-        document: PdfDocument.openAsset('assets/sample_sheet.pdf'), 
+        document: PdfDocument.openAsset('assets/sample_sheet.pdf'),
       );
       setState(() {
         _isPdfLoaded = true;
       });
     } catch (e) {
-      // PDF 파일이 아직 없는 초기 상태를 위한 예외 처리 (시뮬레이션 모드 유지)
       setState(() {
         _isPdfLoaded = false;
       });
@@ -326,7 +374,7 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
       ),
       body: Row(
         children: [
-          // 좌측 도구 모음 (형광펜, 레이저포인터, Key 변경)
+          // 좌측 주석 및 제어 툴바 (형광펜, 레이저포인터, Key 변경)
           Container(
             width: 70,
             color: Colors.grey.shade100,
@@ -367,7 +415,7 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
               ],
             ),
           ),
-          // 중앙 실제 PDF 악보 뷰어 영역
+          // 중앙 PDF 악보 뷰어 영역
           Expanded(
             child: Column(
               children: [
@@ -398,18 +446,18 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   const Text(
-                                    'PDF 악보 파일 연동 대기 중 (상단 툴바에서 제어 가능)',
+                                    'PDF 악보 파일 연동 대기 중',
                                     style: TextStyle(color: Colors.grey, fontSize: 13),
                                   ),
                                   if (_isHighlighterActive)
                                     const Padding(
                                       padding: EdgeInsets.only(top: 12),
-                                      child: Text('✏️ [형광펜 모드 활성화됨]', style: TextStyle(color: Colors.deepPurple)),
+                                      child: Text('✏️ [형광펜 모드 활성화됨 - 터치하여 주석 작성]', style: TextStyle(color: Colors.deepPurple)),
                                     ),
                                   if (_isLaserActive)
                                     const Padding(
                                       padding: EdgeInsets.only(top: 12),
-                                      child: Text('🔴 [레이저 포인터 위치 송출 중]', style: TextStyle(color: Colors.red)),
+                                      child: Text('🔴 [레이저 포인터 실시간 송출 중]', style: TextStyle(color: Colors.red)),
                                     ),
                                 ],
                               ),
@@ -417,7 +465,7 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
                     ),
                   ),
                 ),
-                // 하단 상태 표시 바
+                // 하단 동기화 상태 바
                 Container(
                   padding: const EdgeInsets.all(16),
                   color: Colors.white,
@@ -425,7 +473,7 @@ class _SheetCollaborationScreenState extends State<SheetCollaborationScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        widget.isLeader ? '리더 제어 모드 (페이지 동기화 송출 중)' : '팀원 수신 모드 (리더 화면 자동 동기화)',
+                        widget.isLeader ? '리더 제어 모드 (페이지 및 주석 실시간 동기화 송출 중)' : '팀원 수신 모드 (리더 화면 실시간 자동 동기화)',
                         style: TextStyle(
                           color: widget.isLeader ? Colors.green : Colors.blue,
                           fontWeight: FontWeight.bold,
